@@ -1,39 +1,36 @@
-#include <iostream>
-#include <thread>
-#include <mutex>
-#include <vector>
-#include <memory>
+#include <iostream>           // std::cout
+#include <thread>             // std::thread
+#include <mutex>              // std::mutex, std::unique_lock
+#include <condition_variable> // std::condition_variable
 
-using namespace std;
+std::mutex mtx;
+std::condition_variable cv;
+bool ready = false;
 
-class TThreadFunc {
-    size_t Id;
-    static mutex Mutex;
-public:
-    TThreadFunc (size_t id) : Id(id) {}
-    ~TThreadFunc() {}
+void print_id (int id) {
+  std::unique_lock<std::mutex> lck(mtx);
+  while (!ready) cv.wait(lck);
+  // ...
+  std::cout << "thread " << id << '\n';
+}
 
-    void operator()() const {
-        lock_guard<mutex> guard(Mutex);
-        cout << "Hello, World from [" << Id << "]" << endl;
-    }
-};
+void go() {
+  std::unique_lock<std::mutex> lck(mtx);
+  ready = true;
+  cv.notify_all();
+}
 
-mutex TThreadFunc::Mutex;
+int main ()
+{
+  std::thread threads[10];
+  // spawn 10 threads:
+  for (int i=0; i<10; ++i)
+    threads[i] = std::thread(print_id,i);
 
-int main() {
-    vector<shared_ptr<thread>> threads;
-    size_t thCount = 1000;
-    size_t created = 0;
-    try {
-        for (created = 0; created < thCount; ++created) {
-            threads.push_back(make_shared<thread>(TThreadFunc(created)));
-        }
-    } catch (const std::exception& e) {
-        cerr << "exception handled after " << created << " threads." << endl << e.what() << endl;
-    }
-    for (size_t i = 0; i < created; ++i) {
-        threads[i]->join();
-    }
-    return 0;
+  std::cout << "10 threads ready to race...\n";
+  go();                       // go!
+
+  for (auto& th : threads) th.join();
+
+  return 0;
 }
