@@ -46,11 +46,14 @@ public:
 class my::threadpool::work_thread {
 private:
     std::thread thread;
+    bool on;
+    my::threadpool *pool;
+
+    void exec();
 
 public:
-    work_thread() {
-        ;
-    }
+    work_thread(my::threadpool *_pool);
+    ~work_thread();
 };
 
 class my::threadpool::threadpool_exception: public std::exception {
