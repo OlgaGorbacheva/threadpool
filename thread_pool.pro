@@ -8,4 +8,9 @@ CONFIG -= qt
 
 SOURCES += \
     main.cpp \
+    threadpool.cpp \
+    work_thread.cpp
+
+HEADERS += \
+    threadpool.h
 
