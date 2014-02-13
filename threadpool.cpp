@@ -20,7 +20,14 @@ my::threadpool::threadpool(const unsigned int th_num): fn_container(), th_contai
 }
 
 my::threadpool::~threadpool(){
-    ;
+    while (!fn_container.empty()) {
+        ;
+    }
+    for (unsigned int i = 0; i < th_count; i++) {
+        th_container[i]->on = false;
+        cv.notify_one();
+//        th_container[i]->thread.join();
+    }
 }
 
 void my::threadpool::add(function fn) {

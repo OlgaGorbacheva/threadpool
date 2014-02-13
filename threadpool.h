@@ -14,7 +14,6 @@ typedef std::function<void()> function;
 
 ////припилить контейнер шаблоном
 class threadpool;
-//class work_thread;
 
 template<class _FN, class... _ARGS>
 void add_to_pool(my::threadpool &pool, _FN _fn, _ARGS... _args);
@@ -45,13 +44,14 @@ public:
 
 class my::threadpool::work_thread {
 private:
-    std::thread thread;
     bool on;
     my::threadpool *pool;
+    std::thread thread;
 
     void exec();
 
 public:
+    friend class threadpool;
     work_thread(my::threadpool *_pool);
     ~work_thread();
 };
