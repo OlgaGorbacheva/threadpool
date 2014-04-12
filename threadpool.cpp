@@ -30,13 +30,14 @@ my::threadpool::~threadpool(){
     }
 }
 
-void my::threadpool::add(function fn) {
+template<class _FN, class... _ARGS>
+void my::threadpool::add(_FN const fn, _ARGS const... args) {
     std::unique_lock<std::mutex> locker(lock);
-    fn_container.push(fn);
+    fn_container.push(std::bind(fn, args...));
     cv.notify_all();
 }
 
-template<class FN, class... ARGS>
-void my::add_to_pool(threadpool &pool, FN fn, ARGS... args) {
-    pool.add(std::bind(fn, args...));
-}
+//template<class FN, class... ARGS>
+//void my::add_to_pool(threadpool &pool, FN fn, ARGS... args) {
+//    pool.add(std::bind(fn, args...));
+//}
