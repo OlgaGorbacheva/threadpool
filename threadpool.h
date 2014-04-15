@@ -39,8 +39,8 @@ public:
     threadpool(unsigned int const);
     ~threadpool();
 
-    template<class _FN, class... _ARGS>
-    void add(_FN&& fn, _ARGS&& ... args);
+//    template<class _FN, class... _ARGS>
+//    void add(_FN&& fn, _ARGS&& ... args);
 };
 
 class my::threadpool::work_thread {

@@ -27,7 +27,7 @@ int main() {
 //    my::add_to_pool(pool, &dif::operator (), 4, 3);
 //    my::add_to_pool(pool, &hello_world);
 //    my::add_to_pool(pool, &sp_multy, a, b);
-    pool.add(sum, 6, 5);
+//    pool.add(sum, 6, 5);
 //    pool.add(std::bind(f, 4, 3));
 //    pool.add(std::bind(hello_world));
 //    pool.add(std::bind(sp_multy, a, b));
