@@ -16,3 +16,6 @@ HEADERS += \
     threadpool.h \
     threadpool.hpp
 
+OTHER_FILES += \
+    task.txt
+

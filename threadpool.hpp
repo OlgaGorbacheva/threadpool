@@ -26,30 +26,31 @@ my::threadpool::~threadpool(){
     while (!fn_container.empty()) {
         ;
     }
+//    boost::unique_lock<boost::mutex> locker(lock);
     for (unsigned int i = 0; i < th_count; i++) {
         th_container[i]->on = false;
-        cv.notify_one();
 //        th_container[i]->thread.join();
     }
+//    cv.notify_all();
 }
 
-template<class _FN, class... _ARGS>
-void my::threadpool::add(_FN fn, _ARGS... args) {
+template<class R, class FN, class... ARGS>
+std::shared_ptr<my::Data<R>> my::threadpool::add(FN fn, ARGS... args) {
+    if ()
+    std::shared_ptr<Data<R>> ReturnData(new Data<R>());
+    std::function<R()> rfn = std::bind(fn, args...);
+    function pool_fn = [=]() {
+        ReturnData->data = rfn();
+        ReturnData->ready = true;
+    };
     boost::unique_lock<boost::mutex> locker(lock);
-    fn_container.push(std::bind(fn, args...));
+    fn_container.push(pool_fn);
     cv.notify_all();
+    return ReturnData;
 }
 
-//template<class _FN, class... _ARGS>
-//void runAsync(_FN _fn, _ARGS... _args) {
-//    std::cout << "Yes!" << std::endl;
-//}
-
-
-//template<class FN, class... ARGS>
-//void my::add_to_pool(threadpool &pool, FN fn, ARGS... args) {
-//    pool.add(std::bind(fn, args...));
-//}
+/////////////////////////////////////////////
+/////////////////////////////////////////////
 
 my::threadpool::work_thread::work_thread(my::threadpool *_pool):
     on(true),

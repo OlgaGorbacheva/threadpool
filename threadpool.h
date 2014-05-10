@@ -15,8 +15,8 @@ typedef std::function<void()> function;
 
 class threadpool;
 
-//template<class _FN, class... _ARGS>
-//void add_to_pool(my::threadpool &pool, _FN _fn, _ARGS... _args);
+template<class T>
+class Data;
 }
 
 class my::threadpool {
@@ -39,8 +39,8 @@ public:
     threadpool(unsigned int const);
     ~threadpool();
 
-    template<class _FN, class... _ARGS>
-    void add(_FN fn, _ARGS... args);
+    template<class R, class FN, class... ARGS>
+    std::shared_ptr<Data<R>> add(FN fn, ARGS... args);
 };
 
 class my::threadpool::work_thread {
@@ -56,6 +56,16 @@ public:
     work_thread(my::threadpool *_pool);
     ~work_thread();
 };
+
+template<class T>
+class my::Data
+{
+public:
+    Data():ready(false){}
+    bool ready;
+    T data;
+};
+
 
 class my::threadpool::threadpool_exception: public std::exception {
 private:

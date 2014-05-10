@@ -4,8 +4,9 @@
 
 using namespace std;
 
-void sum(int a, int b) {
-    cout << a + b << endl;
+int sum(int a, int b) {
+//    cout << a + b << endl;
+    return a + b;
 }
 
 class d {
@@ -27,9 +28,11 @@ int main() {
 //    my::add_to_pool(pool, &dif::operator (), 4, 3);
 //    my::add_to_pool(pool, &hello_world);
 //    my::add_to_pool(pool, &sp_multy, a, b);
-//    pool.add(sum(), 6, 5);
+    std::shared_ptr<my::Data<int>> val = pool.add<int>(sum, 6, 5);
+    while (!val->ready);
+    cout << val->data<< endl;
 //    pool.add(std::bind(f, 4, 3));
-    pool.add(hello_world);
+//    pool.add<void, void()>(hello_world);
 //    runAsync(&hello_world);
 //    pool.add(std::bind(sp_multy, a, b));
     return 0;
