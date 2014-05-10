@@ -1,6 +1,8 @@
 QMAKE_CXXFLAGS += -std=c++11
+
 LIBS += -lpthread \
-    -lboost_thread
+    -lboost_thread \
+    -lboost_system
 
 TEMPLATE = app
 CONFIG += console

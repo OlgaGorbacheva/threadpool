@@ -8,15 +8,15 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <boost/thread.hpp>
 
 namespace my {
 typedef std::function<void()> function;
 
-////припилить контейнер шаблоном
 class threadpool;
 
-template<class _FN, class... _ARGS>
-void add_to_pool(my::threadpool &pool, _FN _fn, _ARGS... _args);
+//template<class _FN, class... _ARGS>
+//void add_to_pool(my::threadpool &pool, _FN _fn, _ARGS... _args);
 }
 
 class my::threadpool {
@@ -27,8 +27,8 @@ private:
     std::queue<my::function> fn_container; // контейнер с функциями
     std::vector<th_pointer> th_container; // контейнер с рабочими процессами
     unsigned int const th_count;   // кол-во рабочих процессов
-    std::mutex lock; //сколько нам нужно mutex-ов?
-    std::condition_variable cv;
+    boost::mutex lock; //сколько нам нужно mutex-ов?
+    boost::condition_variable cv;
 
 public:
     friend class work_thread;
@@ -39,15 +39,15 @@ public:
     threadpool(unsigned int const);
     ~threadpool();
 
-//    template<class _FN, class... _ARGS>
-//    void add(_FN&& fn, _ARGS&& ... args);
+    template<class _FN, class... _ARGS>
+    void add(_FN fn, _ARGS... args);
 };
 
 class my::threadpool::work_thread {
 private:
     bool on;
     my::threadpool *pool;
-    std::thread thread;
+    boost::thread thread;
 
     void exec();
 
@@ -68,5 +68,7 @@ public:
         return message;
     }
 };
+
+#include "threadpool.hpp"
 
 #endif // THREADPOOL_H
