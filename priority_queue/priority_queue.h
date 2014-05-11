@@ -22,7 +22,8 @@ private:
     std::vector<my::node<KeyT, ValueT>> heap;
     boost::condition_variable cv;
     boost::shared_mutex sh_m;
-    bool end;
+    boost::mutex first;
+    bool on;
 
     size_t parent(size_t i);
     size_t left(size_t i);
@@ -32,10 +33,10 @@ private:
     void down_heapify(size_t i); // многопоточный
 public:
     priority_queue();
-    ~priority_queue();
+//    ~priority_queue();
 
-    void put(ValueT value, KeyT key = 0); // многопоточный // тип?
-    bool get(std::shared_ptr<std::pair<KeyT, ValueT>> result); // однопоточный
+    void put(ValueT const &value, KeyT const &key = 0); // однопоточный // тип?
+    bool get(ValueT &result); // многопоточный
 
     void finish();
     bool is_finished();
@@ -43,21 +44,16 @@ public:
 
 template <class KeyT, class ValueT>
 class my::node {
-private:
-    KeyT key;
-    ValueT value;
 public:
     node(KeyT k, ValueT v);
     ~node();
 
-    KeyT get_key ();
-    ValueT get_value ();
-    ValueT set_value (ValueT new_value);
-
-    boost::detail::spinlock node_lock;
+    KeyT key;
+    ValueT value;
+    boost::detail::spinlock n_mutex;
 };
 
 
-#include "priority_queue.cpp"
+#include "priority_queue.hpp"
 
 #endif //P_QUEUE_H

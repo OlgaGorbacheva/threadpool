@@ -10,11 +10,11 @@ CONFIG -= app_bundle
 CONFIG -= qt
 
 SOURCES += \
-    main.cpp \
-    priority_queue.cpp
+    main.cpp
 
 HEADERS += \
-    priority_queue.h
+    priority_queue.h\
+    priority_queue.hpp
 
 OTHER_FILES += \
     ../task.txt

@@ -9,6 +9,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <boost/thread.hpp>
+#include "priority_queue/priority_queue.h"
 
 namespace my {
 typedef std::function<void()> function;
@@ -24,7 +25,7 @@ private:
     class work_thread; // собственно класс рабочего процесса
     typedef std::shared_ptr<work_thread> th_pointer;
 
-    std::queue<my::function> fn_container; // контейнер с функциями
+    my::priority_queue<my::function> fn_container; // контейнер с функциями
     std::vector<th_pointer> th_container; // контейнер с рабочими процессами
     unsigned int const th_count;   // кол-во рабочих процессов
     boost::mutex lock; //сколько нам нужно mutex-ов?
@@ -40,7 +41,9 @@ public:
     ~threadpool();
 
     template<class R, class FN, class... ARGS>
-    std::shared_ptr<Data<R>> add(FN fn, ARGS... args);
+    void add(std::shared_ptr<my::Data<R>> ReturnData, FN fn, ARGS... args);
+    template<class R, class FN, class... ARGS>
+    void add(FN fn, ARGS... args);
 };
 
 class my::threadpool::work_thread {
