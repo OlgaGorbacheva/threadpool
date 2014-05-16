@@ -21,20 +21,14 @@ void hello_world() {
 }
 
 int main() {
-//    int a = 2, b = 3;
-//    d f;
+    int a = 2, b = 3;
+    d f;
     my::threadpool pool;
-//    my::add_to_pool(pool, &sum, 5, 6);
-//    my::add_to_pool(pool, &dif::operator (), 4, 3);
-//    my::add_to_pool(pool, &hello_world);
-//    my::add_to_pool(pool, &sp_multy, a, b);
     std::shared_ptr<my::Data<int>> val(new my::Data<int>());
-    pool.add<int>(val, sum, 6, 5);
+    pool.add<int>(0, val, sum, 6, 5);
+    pool.add<void>(0, hello_world);
     while (!val->ready);
-        cout << val->data<< endl;
-//    pool.add(std::bind(f, 4, 3));
-    pool.add<void>(hello_world);
-//    runAsync(&hello_world);
-//    pool.add(std::bind(sp_multy, a, b));
+    cout << val->data<< endl;
+    pool.add<void>(0, f, a, b);
     return 0;
 }

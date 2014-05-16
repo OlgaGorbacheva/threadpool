@@ -5,6 +5,7 @@
 #include <boost/smart_ptr/detail/spinlock.hpp>
 #include <vector>
 #include <memory>
+#include <iostream>
 
 namespace my {
 
@@ -14,6 +15,8 @@ class priority_queue;
 template <class KeyT, class ValueT>
 class node;
 
+template <class T>
+void swap(T &a, T &b);
 }
 
 template <class KeyT, class ValueT>
@@ -21,8 +24,9 @@ class my::priority_queue {
 private:
     std::vector<my::node<KeyT, ValueT>> heap;
     boost::condition_variable cv;
-    boost::shared_mutex sh_m;
-    boost::mutex first;
+    boost::shared_mutex sh_mutex;
+    boost::mutex u_mutex;    
+    boost::mutex _mutex;
     bool on;
 
     size_t parent(size_t i);
@@ -33,19 +37,21 @@ private:
     void down_heapify(size_t i); // многопоточный
 public:
     priority_queue();
-//    ~priority_queue();
+    ~priority_queue();
 
-    void put(ValueT const &value, KeyT const &key = 0); // однопоточный // тип?
+    void put(ValueT const &value, KeyT const &key = 0); // однопоточный
     bool get(ValueT &result); // многопоточный
 
     void finish();
     bool is_finished();
+    bool empty();
 };
 
 template <class KeyT, class ValueT>
 class my::node {
 public:
     node(KeyT k, ValueT v);
+    node();
     ~node();
 
     KeyT key;

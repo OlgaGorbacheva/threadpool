@@ -25,11 +25,10 @@ private:
     class work_thread; // собственно класс рабочего процесса
     typedef std::shared_ptr<work_thread> th_pointer;
 
-    my::priority_queue<my::function> fn_container; // контейнер с функциями
+    my::priority_queue<size_t, my::function> fn_container; // контейнер с функциями
     std::vector<th_pointer> th_container; // контейнер с рабочими процессами
     unsigned int const th_count;   // кол-во рабочих процессов
-    boost::mutex lock; //сколько нам нужно mutex-ов?
-    boost::condition_variable cv;
+    bool on;
 
 public:
     friend class work_thread;
@@ -39,11 +38,12 @@ public:
     threadpool();
     threadpool(unsigned int const);
     ~threadpool();
+    void stop();
 
     template<class R, class FN, class... ARGS>
-    void add(std::shared_ptr<my::Data<R>> ReturnData, FN fn, ARGS... args);
+    void add(size_t priority, std::shared_ptr<my::Data<R>> ReturnData, FN fn, ARGS... args);
     template<class R, class FN, class... ARGS>
-    void add(FN fn, ARGS... args);
+    void add(size_t priority, FN fn, ARGS... args);
 };
 
 class my::threadpool::work_thread {

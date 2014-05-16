@@ -3,6 +3,8 @@
 
 #include "threadpool.h"
 
+////////////////////threadpool/////////////////////////
+
 my::threadpool::threadpool(): fn_container(), th_container(), th_count(boost::thread::hardware_concurrency())  //как определить оптимальное число?
 {
     for (unsigned int i = 0; i < th_count; i++) {
@@ -23,6 +25,10 @@ my::threadpool::threadpool(const unsigned int th_num): fn_container(), th_contai
 }
 
 my::threadpool::~threadpool(){
+    stop();
+}
+
+void my::threadpool::stop() {
     fn_container.finish();
     while (!fn_container.is_finished()) {
         ;
@@ -33,24 +39,22 @@ my::threadpool::~threadpool(){
 }
 
 template<class R, class FN, class... ARGS>
-void my::threadpool::add(std::shared_ptr<my::Data<R>> ReturnData, FN fn, ARGS... args) {
+void my::threadpool::add(size_t priority, std::shared_ptr<my::Data<R>> ReturnData, FN fn, ARGS... args) {
     std::function<R()> rfn = std::bind(fn, args...);
     function pool_fn = [=]() {
         ReturnData->data = rfn();
         ReturnData->ready = true;
     };
-    fn_container.put(pool_fn);
-    cv.notify_all();
+    fn_container.put(pool_fn, priority);
 }
 
 template<class R, class FN, class... ARGS>
-void my::threadpool::add(FN fn, ARGS... args) {
+void my::threadpool::add(size_t priority, FN fn, ARGS... args) {
     function rfn = std::bind(fn, args...);
-    fn_container.put(rfn);
+    fn_container.put(rfn, priority);
 }
 
-/////////////////////////////////////////////
-/////////////////////////////////////////////
+////////////////////work_thread/////////////////////////
 
 my::threadpool::work_thread::work_thread(my::threadpool *_pool):
     on(true),
@@ -65,8 +69,10 @@ my::threadpool::work_thread::~work_thread() {
 
 void my::threadpool::work_thread::exec() {
     function current;
-    while (on && pool->fn_container.get(current)) {
-        current();
+    while (on) {
+        if (pool->fn_container.get(current))
+            current();
+        else break;
     }
 }
 

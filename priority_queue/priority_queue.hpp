@@ -3,7 +3,21 @@
 
 #include "priority_queue.h"
 
+template <class T>
+void my::swap(T &a, T &b) {
+    T c;
+    c = a;
+    a = b;
+    b = c;
+    c.n_mutex.unlock();
+}
+
 //////////////////////////////////node/////////////////////////////////////
+
+template <class KeyT, class ValueT>
+my::node<KeyT, ValueT>::node() {
+    n_mutex.unlock();
+}
 
 template <class KeyT, class ValueT>
 my::node<KeyT, ValueT>::node(KeyT k, ValueT v) {
@@ -17,27 +31,15 @@ my::node<KeyT, ValueT>::~node() {
     boost::lock_guard<boost::detail::spinlock> lock(n_mutex);
 }
 
-//template <class KeyT, class ValueT>
-//KeyT my::node<KeyT, ValueT>::get_key() {
-//    return key;
-//}
-
-//template <class KeyT, class ValueT>
-//ValueT my::node<KeyT, ValueT>::get_value() {
-//    return value;
-//}
-
-//template <class KeyT, class ValueT>
-//ValueT my::node<KeyT, ValueT>::set_value(ValueT _value) {
-//    boost::lock_guard<boost::detail::spinlock> lock(node_lock);
-//    std::swap(_value, value);
-//    return _value;
-//}
-
 //////////////////////////////////queue//////////////////////////////////
 
 template <class KeyT, class ValueT>
 my::priority_queue<KeyT, ValueT>::priority_queue(): on(true) {
+    ;
+}
+
+template <class KeyT, class ValueT>
+my::priority_queue<KeyT, ValueT>::~priority_queue(){
     ;
 }
 
@@ -65,39 +67,42 @@ size_t my::priority_queue<KeyT, ValueT>::right(size_t i) {
 template <class KeyT, class ValueT>
 void my::priority_queue<KeyT, ValueT>::down_heapify(size_t i) {
     boost::unique_lock<boost::detail::spinlock> lock(heap[i].n_mutex);
-    boost::unique_lock<boost::detail::spinlock> left_lock(heap[left(i)].n_mutex);
-    if (i != left(i) && heap[i].key < heap[left(i)].key) {
-        std::swap(heap[i], heap[left(i)]);
-        lock.unlock();
+    if (i != left(i)){
+        boost::unique_lock<boost::detail::spinlock> left_lock(heap[left(i)].n_mutex);
+        if (heap[i].key < heap[left(i)].key) {
+            my::swap(heap[i], heap[left(i)]);
+            lock.unlock();
+            left_lock.unlock();
+            down_heapify(left(i));
+            return;
+        }
         left_lock.unlock();
-        down_heapify(left(i));
-        return;
     }
-    left_lock.unlock();
-    boost::unique_lock<boost::detail::spinlock> right_lock(heap[right(i)].n_mutex);
-    if (i != right(i) && heap[i].key < heap[right(i)].key) {
-        std::swap(heap[i], heap[right(i)]);
-        lock.unlock();
+    if (i != right(i)) {
+        boost::unique_lock<boost::detail::spinlock> right_lock(heap[right(i)].n_mutex);
+        if (i != right(i) && heap[i].key < heap[right(i)].key) {
+            my::swap(heap[i], heap[right(i)]);
+            lock.unlock();
+            right_lock.unlock();
+            down_heapify(right(i));
+            return;
+        }
         right_lock.unlock();
-        down_heapify(right(i));
-        return;
     }
     lock.unlock();
-    right_lock.unlock();
 }
 
 template <class KeyT, class ValueT>
 void my::priority_queue<KeyT, ValueT>::up_heapify(size_t i) {
     if (i != parent(i) && heap[i].key > heap[parent(i)].key){
-        std::swap(heap[i], heap[right(i)]);
+        my::swap(heap[i], heap[parent(i)]);
         up_heapify(parent(i));
     }
 }
 
 template <class KeyT, class ValueT>
 void my::priority_queue<KeyT, ValueT>::put(const ValueT &value, const KeyT &key) {
-    boost::upgrade_lock<boost::shared_mutex> lock(sh_m);
-    boost::upgrade_to_unique_lock<boost::shared_mutex> u_lock(lock);
+    boost::unique_lock<boost::shared_mutex> lock(sh_mutex);
     node<KeyT, ValueT> new_n(key, value);
     heap.push_back(new_n);
     up_heapify(heap.size() - 1);
@@ -106,37 +111,38 @@ void my::priority_queue<KeyT, ValueT>::put(const ValueT &value, const KeyT &key)
 
 template <class KeyT, class ValueT>
 bool my::priority_queue<KeyT, ValueT>::get(ValueT& result) {
-    boost::shared_lock<boost::shared_mutex> sh_lock(sh_m);
-    boost::unique_lock<boost::mutex> f_lock(first);
-    cv.wait(sh_lock, [this]()->bool {
+    boost::unique_lock<boost::mutex> u_lock(u_mutex);
+    cv.wait(u_lock, [this]()->bool {
         return !heap.empty() || !on;
     });
+    boost::shared_lock<boost::shared_mutex> sh_lock(sh_mutex);
     if (!heap.empty()) {
         if ((heap.size() > 1))
-            std::swap(heap[0], heap[heap.size() - 1]);
+            my::swap(heap[0], heap[heap.size() - 1]);
         result = heap[heap.size() - 1].value;
         heap.pop_back();
         int i = 0;
         boost::unique_lock<boost::detail::spinlock> lock(heap[i].n_mutex);
-        boost::unique_lock<boost::detail::spinlock> left_lock(heap[left(i)].n_mutex);
-        if (i != left(i) && heap[i].key < heap[left(i)].key) {
-            std::swap(heap[i], heap[left(i)]);
-            lock.unlock();
-            left_lock.unlock();
-            f_lock.unlock();
-            down_heapify(left(i));
-        } else {
-            left_lock.unlock();
+        if (i != left(i)){
+            boost::unique_lock<boost::detail::spinlock> left_lock(heap[left(i)].n_mutex);
+            if (heap[i].key < heap[left(i)].key) {
+                my::swap(heap[i], heap[left(i)]);
+                lock.unlock();
+                left_lock.unlock();
+                u_lock.unlock();
+                down_heapify(left(i));
+                return true;
+            }
+        }
+        if (i != right(i)) {
             boost::unique_lock<boost::detail::spinlock> right_lock(heap[right(i)].n_mutex);
             if (i != right(i) && heap[i].key < heap[right(i)].key) {
-                std::swap(heap[i], heap[right(i)]);
+                my::swap(heap[i], heap[right(i)]);
                 lock.unlock();
                 right_lock.unlock();
-                f_lock.unlock();
+                u_lock.unlock();
                 down_heapify(right(i));
-            } else {
-                lock.unlock();
-                right_lock.unlock();
+                return true;
             }
         }
         return true;
@@ -146,12 +152,20 @@ bool my::priority_queue<KeyT, ValueT>::get(ValueT& result) {
 
 template <class KeyT, class ValueT>
 void my::priority_queue<KeyT, ValueT>::finish() {
+    boost::unique_lock<boost::mutex> lock(u_mutex);
     on = false;
+    cv.notify_all();
+}
+
+template <class KeyT, class ValueT> //подумать над этой хренью.
+bool my::priority_queue<KeyT, ValueT>::is_finished() {
+    boost::unique_lock<boost::mutex> lock(u_mutex);
+    return !on && heap.empty();
 }
 
 template <class KeyT, class ValueT>
-bool my::priority_queue<KeyT, ValueT>::is_finished() {
-    return !on && heap.empty();
-}
+bool my::priority_queue<KeyT, ValueT>::empty() {
+    return heap.empty();
+};
 
 #endif //P_QUEUE_CPP
