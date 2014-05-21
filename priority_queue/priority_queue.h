@@ -25,8 +25,7 @@ private:
     std::vector<my::node<KeyT, ValueT>> heap;
     boost::condition_variable cv;
     boost::shared_mutex sh_mutex;
-    boost::mutex u_mutex;    
-    boost::mutex _mutex;
+    boost::mutex u_mutex;
     bool on;
 
     size_t parent(size_t i);

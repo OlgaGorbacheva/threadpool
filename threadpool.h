@@ -9,7 +9,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <boost/thread.hpp>
-#include "priority_queue/priority_queue.h"
+#include "priority_queue.h"
 
 namespace my {
 typedef std::function<void()> function;
@@ -68,7 +68,6 @@ public:
     bool ready;
     T data;
 };
-
 
 class my::threadpool::threadpool_exception: public std::exception {
 private:
