@@ -27,8 +27,8 @@ int main() {
     std::shared_ptr<my::Data<int>> val(new my::Data<int>());
     pool.add<int>(0, val, sum, 6, 5);
     pool.add<void>(0, hello_world);
-    while (!val->ready);
-    cout << val->data<< endl;
+    int c = val->get();
+    cout << c << endl;
     pool.add<void>(0, f, a, b);
     return 0;
 }

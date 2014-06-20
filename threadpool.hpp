@@ -3,6 +3,15 @@
 
 #include "threadpool.h"
 
+template<class T>
+T my::Data<T>::get() {
+    try{
+        data.wait();
+    } catch(...) {
+    }
+    return data.get();
+}
+
 ////////////////////threadpool/////////////////////////
 
 my::threadpool::threadpool(): fn_container(), th_container(), th_count(boost::thread::hardware_concurrency())  //как определить оптимальное число?
@@ -42,8 +51,9 @@ template<class R, class FN, class... ARGS>
 void my::threadpool::add(size_t priority, std::shared_ptr<my::Data<R>> ReturnData, FN fn, ARGS... args) {
     std::function<R()> rfn = std::bind(fn, args...);
     function pool_fn = [=]() {
-        ReturnData->data = rfn();
-        ReturnData->ready = true;
+        boost::packaged_task<R> pt(rfn);
+        ReturnData->data =pt.get_future();
+        pt();
     };
     fn_container.put(pool_fn, priority);
 }

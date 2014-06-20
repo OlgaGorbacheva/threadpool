@@ -9,6 +9,8 @@
 #include <mutex>
 #include <condition_variable>
 #include <boost/thread.hpp>
+#include <boost/thread/future.hpp>
+#include <boost/thread/thread.hpp>
 #include "priority_queue.h"
 
 namespace my {
@@ -64,9 +66,9 @@ template<class T>
 class my::Data
 {
 public:
-    Data():ready(false){}
-    bool ready;
-    T data;
+    boost::unique_future<T> data;
+
+    T get();
 };
 
 class my::threadpool::threadpool_exception: public std::exception {
